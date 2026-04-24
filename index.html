@@ -110,15 +110,15 @@
     <h3>🔄 Rebirth</h3>
     <p>Rebirths : <span id="rebirthCount">0</span> / 1000</p>
     <p>Multiplicateur global : <span id="rebirthMult">1.00</span>x</p>
-    <p>Coût Rebirth : <span id="rebirthCost">5 000 000 000</span> Axions</p>
-    <button id="doRebirth">Faire un Rebirth</button>
+    <p>Coût Rebirth : <span id="rebirthCost">5 000 000 000</span> Axions</p>
+    <button id="doRebirth">Faire un Rebirth</button>
 
     <div id="click-upgrade">
-      <h4>🖱️ Amélioration de clic</h4>
-      <p>Niveau : <span id="clickLevel">0</span> / 1000</p>
-      <p>Bonus par clic : +<span id="clickBonus">0</span> Axions</p>
-      <p>Coût : <span id="clickCost">500</span> Axions</p>
-      <button id="buyClickUpgrade">Améliorer le clic</button>
+      <h4>🖱️ Amélioration de clic</h4>
+      <p>Niveau : <span id="clickLevel">0</span> / 1000</p>
+      <p>Bonus : +<span id="clickBonus">0</span> par clic</p>
+      <p>Coût : <span id="clickCost">500</span> Axions</p>
+      <button id="buyClickUpgrade">Améliorer le clic</button>
     </div>
   </div>
 
@@ -128,31 +128,30 @@
     // =============================
     // VARIABLES PRINCIPALES
     // =============================
-    let axions = 0;
-    let aps = 0;
-    let rebirths = 0;
-    let rebirthMultiplier = 1;
-    let rebirthCost = 5_000_000_000;
-    
-    // Amélioration de clic
-    let clickLevel = 0;
-    let clickBonus = 0;
-    let clickCost = 500;
+    let axions = 0, aps = 0;
+    let rebirths = 0, rebirthMultiplier = 1, rebirthCost = 5_000_000_000;
 
+    // Amélioration de clic
+    let clickLevel = 0, clickBonus = 0, clickCost = 500;
+
+    // Chaque amélioration a un bonus de multiplicateur progressif (+0.5 à chaque niveau de tier)
     const upgrades = [
-      { name: "Machine à Axion", baseCost: 10, baseGain: 1 },
-      { name: "Axion Extracteur", baseCost: 100, baseGain: 10 },
-      { name: "Axion Raffinerie", baseCost: 1000, baseGain: 100 },
-      { name: "Axion Industrie", baseCost: 10000, baseGain: 1000 },
-      { name: "Axion Méga-Usine", baseCost: 50000, baseGain: 5000 },
-      { name: "Axion Réacteur", baseCost: 200000, baseGain: 20000 },
-      { name: "Axion Fusion", baseCost: 1e6, baseGain: 100000 },
-      { name: "Laboratoire Quantique", baseCost: 5e6, baseGain: 500000 },
-      { name: "Colonie Spatiale", baseCost: 2e7, baseGain: 2e6 },
-      { name: "Empire Axionique", baseCost: 1e8, baseGain: 1e7 },
-      { name: "Singularité Axion", baseCost: 5e8, baseGain: 5e7 }
+      { name: "Machine à Axion", baseCost: 10, baseGain: 1, multGain: 0.1 },
+      { name: "Axion Extracteur", baseCost: 100, baseGain: 10, multGain: 0.5 },
+      { name: "Axion Raffinerie", baseCost: 1000, baseGain: 100, multGain: 1.0 },
+      { name: "Axion Industrie", baseCost: 10000, baseGain: 1000, multGain: 1.5 },
+      { name: "Axion Méga-Usine", baseCost: 50000, baseGain: 5000, multGain: 2.0 },
+      { name: "Axion Réacteur", baseCost: 200000, baseGain: 20000, multGain: 2.5 },
+      { name: "Axion Fusion", baseCost: 1e6, baseGain: 100000, multGain: 3.0 },
+      { name: "Laboratoire Quantique", baseCost: 5e6, baseGain: 500000, multGain: 3.5 },
+      { name: "Colonie Spatiale", baseCost: 2e7, baseGain: 2e6, multGain: 4.0 },
+      { name: "Empire Axionique", baseCost: 1e8, baseGain: 1e7, multGain: 4.5 },
+      { name: "Singularité Axion", baseCost: 5e8, baseGain: 5e7, multGain: 5.0 }
     ];
 
+    // =============================
+    // CRÉATION DES UPGRADES
+    // =============================
     const shopEl = document.getElementById("shop");
     upgrades.forEach((u, i) => {
       u.mult = 1.0;
@@ -160,24 +159,26 @@
       div.className = "item locked";
       div.innerHTML = `
         <h3>${u.name}</h3>
-        <p>Production : +${u.baseGain.toLocaleString()}/s</p>
-        <p>Coût : <span id="cost${i}">${u.baseCost.toLocaleString()}</span></p>
-        <p>Multiplicateur : <span id="mult${i}">1.0</span>x</p>
-        <button id="buy${i}">Acheter</button>
-      `;
+        <p>Production : +${u.baseGain.toLocaleString()}/s</p>
+        <p>Coût : <span id="cost${i}">${u.baseCost.toLocaleString()}</span></p>
+        <p>Multiplicateur : <span id="mult${i}">1.0</span>x</p>
+        <button id="buy${i}">Acheter</button>`;
       shopEl.appendChild(div);
       u.element = div;
       u.unlocked = false;
     });
 
-    const countEl = document.getElementById("axionCount");
-    const apsEl = document.getElementById("aps");
-    const rebirthCountEl = document.getElementById("rebirthCount");
-    const rebirthMultEl = document.getElementById("rebirthMult");
-    const rebirthCostEl = document.getElementById("rebirthCost");
-    const clickLevelEl = document.getElementById("clickLevel");
-    const clickBonusEl = document.getElementById("clickBonus");
-    const clickCostEl = document.getElementById("clickCost");
+    // =============================
+    // SÉLECTEURS HTML
+    // =============================
+    const countEl = document.getElementById("axionCount"),
+          apsEl = document.getElementById("aps"),
+          rebirthCountEl = document.getElementById("rebirthCount"),
+          rebirthMultEl = document.getElementById("rebirthMult"),
+          rebirthCostEl = document.getElementById("rebirthCost"),
+          clickLevelEl = document.getElementById("clickLevel"),
+          clickBonusEl = document.getElementById("clickBonus"),
+          clickCostEl = document.getElementById("clickCost");
 
     // =============================
     // CLIC PRINCIPAL
@@ -188,15 +189,15 @@
     };
 
     // =============================
-    // ACHATS DES UPGRADES
+    // ACHATS
     // =============================
     upgrades.forEach((u, i) => {
       document.getElementById(`buy${i}`).onclick = () => {
         if (!u.unlocked) return;
         if (axions >= u.baseCost) {
           axions -= u.baseCost;
-          u.mult = parseFloat((u.mult + 0.1).toFixed(1));  // +10 % prod
-          u.baseCost = Math.floor(u.baseCost * 1.1);      // +10 % prix
+          u.mult = parseFloat((u.mult + u.multGain).toFixed(2)); // multiplicateur spécifique
+          u.baseCost = Math.floor(u.baseCost * 1.1);
           calcAps();
           updateDisplay();
         }
@@ -216,7 +217,7 @@
         axions -= clickCost;
         clickLevel++;
         clickBonus = clickLevel * 50;
-        clickCost = Math.floor(clickCost * 2.5); // +250 % coût
+        clickCost = Math.floor(clickCost * 2.5);
         updateDisplay();
         saveGame();
       }
@@ -259,37 +260,28 @@
           u.element.classList.remove("locked");
           u.element.querySelector("h3").textContent = u.name;
           u.element.querySelector("p:nth-child(2)").innerHTML =
-            `Production : +${u.baseGain.toLocaleString()}/s`;
+            `Production : +${u.baseGain.toLocaleString()}/s`;
         } else {
           u.unlocked = false;
           u.element.classList.add("locked");
-          u.element.querySelector("h3").textContent = `(Bloqué) ${u.name}`;
+          u.element.querySelector("h3").textContent = `(Bloqué) ${u.name}`;
           u.element.querySelector("p:nth-child(2)").innerHTML =
             `<strong>${u.baseCost.toLocaleString()} Axions</strong> requis pour débloquer.`;
         }
         document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
-        document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
+        document.getElementById(`mult${i}`).textContent = u.mult.toFixed(2);
       });
     }
 
     // =============================
-    // GÉNÉRATION AUTOMATIQUE
+    // GÉNÉRATION + SAUVEGARDE
     // =============================
-    setInterval(() => {
-      axions += aps / 10;
-      updateDisplay();
-    }, 100);
+    setInterval(() => { axions += aps / 10; updateDisplay(); }, 100);
 
-    // =============================
-    // SAUVEGARDE / CHARGEMENT
-    // =============================
     function saveGame() {
       const save = {
-        axions,
-        upgrades: upgrades.map(u => ({
-          baseCost: u.baseCost,
-          mult: u.mult,
-          unlocked: u.unlocked
+        axions, upgrades: upgrades.map(u => ({
+          baseCost: u.baseCost, mult: u.mult, unlocked: u.unlocked
         })),
         rebirths, rebirthMultiplier, rebirthCost,
         clickLevel, clickBonus, clickCost
