@@ -101,7 +101,9 @@
   <div class="shop" id="shop"></div>
 
   <script>
-    // ========== VARIABLES ==========
+    // =============================
+    // VARIABLES PRINCIPALES
+    // =============================
     let axions = 0;
     let aps = 0;
     let rebirths = 0;
@@ -122,7 +124,9 @@
       { name: "Singularité Axion", baseCost: 5e8, baseGain: 5e7 }
     ];
 
-    // ========== CREATION DE LA BOUTIQUE ==========
+    // =============================
+    // CRÉATION DE LA BOUTIQUE
+    // =============================
     const shopEl = document.getElementById("shop");
     upgrades.forEach((u, i) => {
       u.mult = 1.0;
@@ -140,20 +144,26 @@
       u.unlocked = false;
     });
 
+    // =============================
+    // RÉFÉRENCES HTML
+    // =============================
     const countEl = document.getElementById("axionCount");
     const apsEl = document.getElementById("aps");
     const rebirthCountEl = document.getElementById("rebirthCount");
     const rebirthMultEl = document.getElementById("rebirthMult");
     const rebirthCostEl = document.getElementById("rebirthCost");
-    const rebirthInfoEl = document.getElementById("rebirthInfo");
 
-    // ========== CLICK ==========
+    // =============================
+    // LOGIQUE DE CLIC
+    // =============================
     document.getElementById("axion").onclick = () => {
       axions += 1 * rebirthMultiplier;
       updateDisplay();
     };
 
-    // ========== ACHATS ==========
+    // =============================
+    // ACHATS
+    // =============================
     upgrades.forEach((u, i) => {
       document.getElementById(`buy${i}`).onclick = () => {
         if (!u.unlocked) return;
@@ -172,16 +182,17 @@
       aps *= rebirthMultiplier;
     }
 
-    // ========== REBIRTH ==========
+    // =============================
+    // REBIRTH
+    // =============================
     document.getElementById("doRebirth").onclick = () => {
       if (axions >= rebirthCost && rebirths < 1000) {
         rebirths++;
         axions = 0;
-        upgrades.forEach(u => { u.mult = 1.0; u.baseCost = Math.floor(u.baseCost / rebirthMultiplier); });
+        upgrades.forEach(u => { u.mult = 1.0; });
         rebirthCost += 2_500_000_000;
         rebirthMultiplier *= 1.5;
 
-        // Bonus chaque 5 rebirths
         if (rebirths % 5 === 0) {
           rebirthMultiplier += 0.25;
         }
@@ -192,7 +203,9 @@
       }
     };
 
-    // ========== AFFICHAGE ==========
+    // =============================
+    // AFFICHAGE MIS À JOUR
+    // =============================
     function updateDisplay() {
       countEl.textContent = Math.floor(axions).toLocaleString();
       apsEl.textContent = aps.toFixed(1);
@@ -200,29 +213,38 @@
       rebirthMultEl.textContent = rebirthMultiplier.toFixed(2);
       rebirthCostEl.textContent = rebirthCost.toLocaleString();
 
-  upgrades.forEach((u, i) => {
-  const costOK = axions >= u.baseCost / 10; // ...
-  if (!u.unlocked && costOK) {
-    ...
-  }
-  if (!u.unlocked) {
-    ...
-  }
-  document.getElementById(`cost${i}`).textContent = ...
-  document.getElementById(`mult${i}`).textContent = ...
-});
+      upgrades.forEach((u, i) => {
+        const costOK = axions >= u.baseCost; // ✅ nouveau système de déblocage
+        if (costOK) {
+          u.unlocked = true;
+          u.element.classList.remove("locked");
+          u.element.querySelector("h3").textContent = u.name;
+          u.element.querySelector("p:nth-child(2)").innerHTML =
+            `Production : +${u.baseGain.toLocaleString()} /s`;
+        } else {
+          u.unlocked = false;
+          u.element.classList.add("locked");
+          u.element.querySelector("h3").textContent = `(Bloqué) ${u.name}`;
+          u.element.querySelector("p:nth-child(2)").innerHTML =
+            `<strong>${u.baseCost.toLocaleString()} Axions</strong> requis pour débloquer.`;
+        }
 
-
+        document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
+        document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
       });
     }
 
-    // ========== GÉNÉRATION ==========
+    // =============================
+    // GÉNÉRATION AUTOMATIQUE
+    // =============================
     setInterval(() => {
       axions += aps / 10;
       updateDisplay();
     }, 100);
 
-    // ========== SAUVEGARDE ==========
+    // =============================
+    // SAUVEGARDE
+    // =============================
     function saveGame() {
       const save = {
         axions,
@@ -251,7 +273,6 @@
       updateDisplay();
     }
 
-    // Sauvegarde auto toutes les 5 secondes
     setInterval(saveGame, 5000);
     loadGame();
   </script>
