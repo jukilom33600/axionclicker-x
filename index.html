@@ -95,7 +95,6 @@
     <p>Multiplicateur : <span id="rebirthMult">1.00</span>x</p>
     <p>Coût Rebirth : <span id="rebirthCost">5 000 000 000</span> Axions</p>
     <button id="doRebirth">Faire un Rebirth</button>
-    <p id="rebirthInfo"></p>
   </div>
 
   <div class="shop" id="shop"></div>
@@ -108,7 +107,7 @@
     let aps = 0;
     let rebirths = 0;
     let rebirthMultiplier = 1;
-    let rebirthCost = 5_000_000_000; // 5B
+    let rebirthCost = 5_000_000_000; // 5 milliards
 
     const upgrades = [
       { name: "Machine à Axion", baseCost: 10, baseGain: 1 },
@@ -154,7 +153,7 @@
     const rebirthCostEl = document.getElementById("rebirthCost");
 
     // =============================
-    // LOGIQUE DE CLIC
+    // CLIC PRINCIPAL
     // =============================
     document.getElementById("axion").onclick = () => {
       axions += 1 * rebirthMultiplier;
@@ -169,8 +168,8 @@
         if (!u.unlocked) return;
         if (axions >= u.baseCost) {
           axions -= u.baseCost;
-          u.mult = parseFloat((u.mult + 0.1).toFixed(1));
-          u.baseCost = Math.floor(u.baseCost * 1.1);
+          u.mult = parseFloat((u.mult + 0.1).toFixed(1)); // +10 % production
+          u.baseCost = Math.floor(u.baseCost * 1.1);      // +10 % prix
           calcAps();
           updateDisplay();
         }
@@ -192,11 +191,7 @@
         upgrades.forEach(u => { u.mult = 1.0; });
         rebirthCost += 2_500_000_000;
         rebirthMultiplier *= 1.5;
-
-        if (rebirths % 5 === 0) {
-          rebirthMultiplier += 0.25;
-        }
-
+        if (rebirths % 5 === 0) rebirthMultiplier += 0.25;
         calcAps();
         updateDisplay();
         saveGame();
@@ -204,7 +199,7 @@
     };
 
     // =============================
-    // AFFICHAGE MIS À JOUR
+    // AFFICHAGE
     // =============================
     function updateDisplay() {
       countEl.textContent = Math.floor(axions).toLocaleString();
@@ -214,7 +209,7 @@
       rebirthCostEl.textContent = rebirthCost.toLocaleString();
 
       upgrades.forEach((u, i) => {
-        const costOK = axions >= u.baseCost; // ✅ nouveau système de déblocage
+        const costOK = i === 0 || axions >= u.baseCost; // première visible
         if (costOK) {
           u.unlocked = true;
           u.element.classList.remove("locked");
@@ -228,7 +223,6 @@
           u.element.querySelector("p:nth-child(2)").innerHTML =
             `<strong>${u.baseCost.toLocaleString()} Axions</strong> requis pour débloquer.`;
         }
-
         document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
         document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
       });
@@ -248,7 +242,11 @@
     function saveGame() {
       const save = {
         axions,
-        upgrades: upgrades.map(u => ({ baseCost: u.baseCost, mult: u.mult, unlocked: u.unlocked })),
+        upgrades: upgrades.map(u => ({
+          baseCost: u.baseCost,
+          mult: u.mult,
+          unlocked: u.unlocked
+        })),
         rebirths,
         rebirthMultiplier,
         rebirthCost
@@ -263,7 +261,6 @@
       rebirths = save.rebirths;
       rebirthMultiplier = save.rebirthMultiplier || 1;
       rebirthCost = save.rebirthCost || 5_000_000_000;
-
       save.upgrades.forEach((s, i) => {
         upgrades[i].baseCost = s.baseCost;
         upgrades[i].mult = s.mult;
