@@ -63,34 +63,32 @@
     let aps = 0; // axions par seconde
 
     const upgrades = [
-      { name: "Machine à Axion", baseCost: 10, gain: 1 },
-      { name: "Axion Extracteur", baseCost: 100, gain: 10 },
-      { name: "Axion Raffinerie", baseCost: 1000, gain: 100 },
-      { name: "Axion Industrie", baseCost: 10000, gain: 1000 },
-      { name: "Axion Méga-Usine", baseCost: 50000, gain: 5000 },
-      { name: "Axion Réacteur", baseCost: 200000, gain: 20000 },
-      { name: "Axion Fusion", baseCost: 1e6, gain: 100000 },
-      { name: "Laboratoire Quantique", baseCost: 5e6, gain: 500000 },
-      { name: "Colonie Spatiale", baseCost: 2e7, gain: 2e6 },
-      { name: "Empire Axionique", baseCost: 1e8, gain: 1e7 },
-      { name: "Singularité Axion", baseCost: 5e8, gain: 5e7 }
+      { name: "Machine à Axion", baseCost: 10, baseGain: 1 },
+      { name: "Axion Extracteur", baseCost: 100, baseGain: 10 },
+      { name: "Axion Raffinerie", baseCost: 1000, baseGain: 100 },
+      { name: "Axion Industrie", baseCost: 10000, baseGain: 1000 },
+      { name: "Axion Méga-Usine", baseCost: 50000, baseGain: 5000 },
+      { name: "Axion Réacteur", baseCost: 200000, baseGain: 20000 },
+      { name: "Axion Fusion", baseCost: 1e6, baseGain: 100000 },
+      { name: "Laboratoire Quantique", baseCost: 5e6, baseGain: 500000 },
+      { name: "Colonie Spatiale", baseCost: 2e7, baseGain: 2e6 },
+      { name: "Empire Axionique", baseCost: 1e8, baseGain: 1e7 },
+      { name: "Singularité Axion", baseCost: 5e8, baseGain: 5e7 }
     ];
 
     const shopEl = document.getElementById('shop');
-
-    // Création visuelle de la boutique
     upgrades.forEach((u, i) => {
       const div = document.createElement('div');
       div.className = 'item';
       div.innerHTML = `
         <h3>${u.name}</h3>
-        <p>Production : +${u.gain.toLocaleString()} /s</p>
+        <p>Production : +${u.baseGain.toLocaleString()} /s</p>
         <p>Coût : <span id="cost${i}">${u.baseCost.toLocaleString()}</span></p>
-        <p>Possédé : <span id="owned${i}">0</span></p>
+        <p>Multiplicateur : <span id="mult${i}">1.0</span>x</p>
         <button id="buy${i}">Acheter</button>
       `;
       shopEl.appendChild(div);
-      u.owned = 0;
+      u.mult = 1.0;
     });
 
     const countEl = document.getElementById("axionCount");
@@ -101,13 +99,12 @@
       updateDisplay();
     };
 
-    // Acheter un upgrade
     upgrades.forEach((u, i) => {
       document.getElementById(`buy${i}`).onclick = () => {
         if (axions >= u.baseCost) {
           axions -= u.baseCost;
-          u.owned++;
-          u.baseCost = Math.floor(u.baseCost * 1.1); // +10% à chaque achat
+          u.mult = parseFloat((u.mult + 0.1).toFixed(1)); // +10% au multiplicateur
+          u.baseCost = Math.floor(u.baseCost * 1.1); // +10% de prix à chaque achat
           calcAps();
           updateDisplay();
         }
@@ -115,21 +112,21 @@
     });
 
     function calcAps() {
-      aps = upgrades.reduce((sum, u) => sum + u.gain * u.owned, 0);
+      aps = upgrades.reduce((sum, u) => sum + u.baseGain * (u.mult - 1), 0);
     }
 
     function updateDisplay() {
       countEl.textContent = Math.floor(axions).toLocaleString();
-      apsEl.textContent = aps.toLocaleString();
+      apsEl.textContent = aps.toFixed(1);
       upgrades.forEach((u, i) => {
         document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
-        document.getElementById(`owned${i}`).textContent = u.owned;
+        document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
       });
     }
 
-    // Génération automatique (10 ticks par seconde)
+    // Génération automatique
     setInterval(() => {
-      axions += aps / 10;
+      axions += aps / 10; // 10 fois par seconde
       updateDisplay();
     }, 100);
   </script>
