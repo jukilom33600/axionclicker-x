@@ -1,1 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mon Clicker</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 50px; }
+    #cookie { font-size: 100px; cursor: pointer; user-select: none; }
+    button { margin: 10px; padding: 10px 20px; }
+  </style>
+</head>
+<body>
+  <h1>🍪 <span id="count">0</span> cookies</h1>
+  <div id="cookie">🍪</div>
+  <p>Production : <span id="cps">0</span>/s</p>
+  <button id="buyGrandma">Acheter Grand-mère (coût: <span id="grandmaCost">10</span>)</button>
+
+  <script>
+    let cookies = 0;
+    let cps = 0; // cookies par seconde
+    let grandmas = 0;
+    let grandmaCost = 10;
+
+    const countEl = document.getElementById('count');
+    const cpsEl = document.getElementById('cps');
+    const costEl = document.getElementById('grandmaCost');
+
+    document.getElementById('cookie').onclick = () => {
+      cookies++;
+      updateDisplay();
+    };
+
+    document.getElementById('buyGrandma').onclick = () => {
+      if (cookies >= grandmaCost) {
+        cookies -= grandmaCost;
+        grandmas++;
+        cps += 1;
+        grandmaCost = Math.floor(grandmaCost * 1.5);
+        updateDisplay();
+      }
+    };
+
+    function updateDisplay() {
+      countEl.textContent = Math.floor(cookies);
+      cpsEl.textContent = cps;
+      costEl.textContent = grandmaCost;
+    }
+
+    setInterval(() => {
+      cookies += cps;
+      updateDisplay();
+    }, 1000);
+  </script>
+</body>
+</html>
 
