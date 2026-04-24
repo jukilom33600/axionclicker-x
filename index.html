@@ -200,18 +200,26 @@
       rebirthMultEl.textContent = rebirthMultiplier.toFixed(2);
       rebirthCostEl.textContent = rebirthCost.toLocaleString();
 
-      upgrades.forEach((u, i) => {
-        const costOK = axions >= u.baseCost / 10; // seuil pour affichage
-        if (!u.unlocked && costOK) {
-          u.unlocked = true;
-          u.element.classList.remove("locked");
-        }
-        if (!u.unlocked) {
-          u.element.querySelector("h3").textContent = `(Bloqué) ${u.name}`;
-          u.element.querySelector("p:nth-child(2)").innerHTML = `<strong>${(u.baseCost/10).toLocaleString()} Axions</strong> requis pour débloquer.`;
-        }
-        document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
-        document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
+   upgrades.forEach((u, i) => {
+  const costOK = axions >= u.baseCost; // on débloque quand on peut acheter
+  if (costOK) {
+    u.unlocked = true;
+    u.element.classList.remove("locked");
+    u.element.querySelector("h3").textContent = u.name;
+    u.element.querySelector("p:nth-child(2)").innerHTML =
+      `Production : +${u.baseGain.toLocaleString()} /s`;
+  } else {
+    u.unlocked = false;
+    u.element.classList.add("locked");
+    u.element.querySelector("h3").textContent = `(Bloqué) ${u.name}`;
+    u.element.querySelector("p:nth-child(2)").innerHTML =
+      `<strong>${u.baseCost.toLocaleString()} Axions</strong> requis pour débloquer.`;
+  }
+
+  document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
+  document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
+});
+
       });
     }
 
