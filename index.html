@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>AxionClicker</title>
+  <title>AxionClicker Rebirth Edition</title>
   <style>
     body {
       background: radial-gradient(circle at center, #111 0%, #000 80%);
@@ -11,7 +11,7 @@
       text-align: center;
       padding: 30px;
     }
-    h1 { font-size: 2em; margin-bottom: 10px; }
+    h1 { margin-bottom: 10px; }
     #axion {
       font-size: 100px;
       cursor: pointer;
@@ -19,48 +19,94 @@
       user-select: none;
     }
     #axion:active { transform: scale(0.95); }
-    .shop {
-      margin-top: 30px;
+    .stats {
       display: flex;
       justify-content: center;
+      gap: 50px;
+      margin-bottom: 20px;
+    }
+    .shop {
+      margin-top: 20px;
+      display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 15px;
     }
     .item {
       background: rgba(255,255,255,0.1);
       border: 1px solid #333;
       border-radius: 10px;
-      padding: 15px;
+      padding: 12px;
       width: 180px;
     }
     .item button {
       width: 100%;
       padding: 8px;
-      margin-top: 8px;
-      cursor: pointer;
+      margin-top: 6px;
       border: none;
+      cursor: pointer;
       background: #06f;
       color: white;
       border-radius: 5px;
       font-weight: bold;
     }
-    .item button:hover {
-      background: #09f;
+    .item button:hover { background: #09f; }
+    #rebirth-panel {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #444;
+      border-radius: 10px;
+      padding: 15px;
+      width: 210px;
+      text-align: left;
+    }
+    #rebirth-panel button {
+      width: 100%;
+      padding: 10px;
+      background: #e91e63;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    #rebirth-panel button:hover { background: #f06292; }
+    .locked {
+      opacity: 0.4;
+      font-style: italic;
     }
   </style>
 </head>
-
 <body>
   <h1>⚛️ AxionClicker ⚛️</h1>
-  <p><strong>Axions :</strong> <span id="axionCount">0</span></p>
+
+  <div class="stats">
+    <p><strong>Axions :</strong> <span id="axionCount">0</span></p>
+    <p><strong>Production :</strong> <span id="aps">0</span>/s</p>
+  </div>
+
   <div id="axion">🧬</div>
-  <p>Production : <span id="aps">0</span> /s</p>
+
+  <div id="rebirth-panel">
+    <h3>🔄 Rebirth</h3>
+    <p>Rebirths : <span id="rebirthCount">0</span> / 1000</p>
+    <p>Multiplicateur : <span id="rebirthMult">1.00</span>x</p>
+    <p>Coût Rebirth : <span id="rebirthCost">5 000 000 000</span> Axions</p>
+    <button id="doRebirth">Faire un Rebirth</button>
+    <p id="rebirthInfo"></p>
+  </div>
 
   <div class="shop" id="shop"></div>
 
   <script>
+    // ========== VARIABLES ==========
     let axions = 0;
-    let aps = 0; // axions par seconde
+    let aps = 0;
+    let rebirths = 0;
+    let rebirthMultiplier = 1;
+    let rebirthCost = 5_000_000_000; // 5B
 
     const upgrades = [
       { name: "Machine à Axion", baseCost: 10, baseGain: 1 },
@@ -76,10 +122,12 @@
       { name: "Singularité Axion", baseCost: 5e8, baseGain: 5e7 }
     ];
 
-    const shopEl = document.getElementById('shop');
+    // ========== CREATION DE LA BOUTIQUE ==========
+    const shopEl = document.getElementById("shop");
     upgrades.forEach((u, i) => {
-      const div = document.createElement('div');
-      div.className = 'item';
+      u.mult = 1.0;
+      const div = document.createElement("div");
+      div.className = "item locked";
       div.innerHTML = `
         <h3>${u.name}</h3>
         <p>Production : +${u.baseGain.toLocaleString()} /s</p>
@@ -88,23 +136,31 @@
         <button id="buy${i}">Acheter</button>
       `;
       shopEl.appendChild(div);
-      u.mult = 1.0;
+      u.element = div;
+      u.unlocked = false;
     });
 
     const countEl = document.getElementById("axionCount");
     const apsEl = document.getElementById("aps");
+    const rebirthCountEl = document.getElementById("rebirthCount");
+    const rebirthMultEl = document.getElementById("rebirthMult");
+    const rebirthCostEl = document.getElementById("rebirthCost");
+    const rebirthInfoEl = document.getElementById("rebirthInfo");
 
+    // ========== CLICK ==========
     document.getElementById("axion").onclick = () => {
-      axions++;
+      axions += 1 * rebirthMultiplier;
       updateDisplay();
     };
 
+    // ========== ACHATS ==========
     upgrades.forEach((u, i) => {
       document.getElementById(`buy${i}`).onclick = () => {
+        if (!u.unlocked) return;
         if (axions >= u.baseCost) {
           axions -= u.baseCost;
-          u.mult = parseFloat((u.mult + 0.1).toFixed(1)); // +10% au multiplicateur
-          u.baseCost = Math.floor(u.baseCost * 1.1); // +10% de prix à chaque achat
+          u.mult = parseFloat((u.mult + 0.1).toFixed(1));
+          u.baseCost = Math.floor(u.baseCost * 1.1);
           calcAps();
           updateDisplay();
         }
@@ -113,22 +169,90 @@
 
     function calcAps() {
       aps = upgrades.reduce((sum, u) => sum + u.baseGain * (u.mult - 1), 0);
+      aps *= rebirthMultiplier;
     }
 
+    // ========== REBIRTH ==========
+    document.getElementById("doRebirth").onclick = () => {
+      if (axions >= rebirthCost && rebirths < 1000) {
+        rebirths++;
+        axions = 0;
+        upgrades.forEach(u => { u.mult = 1.0; u.baseCost = Math.floor(u.baseCost / rebirthMultiplier); });
+        rebirthCost += 2_500_000_000;
+        rebirthMultiplier *= 1.5;
+
+        // Bonus chaque 5 rebirths
+        if (rebirths % 5 === 0) {
+          rebirthMultiplier += 0.25;
+        }
+
+        calcAps();
+        updateDisplay();
+        saveGame();
+      }
+    };
+
+    // ========== AFFICHAGE ==========
     function updateDisplay() {
       countEl.textContent = Math.floor(axions).toLocaleString();
       apsEl.textContent = aps.toFixed(1);
+      rebirthCountEl.textContent = rebirths;
+      rebirthMultEl.textContent = rebirthMultiplier.toFixed(2);
+      rebirthCostEl.textContent = rebirthCost.toLocaleString();
+
       upgrades.forEach((u, i) => {
+        const costOK = axions >= u.baseCost / 10; // seuil pour affichage
+        if (!u.unlocked && costOK) {
+          u.unlocked = true;
+          u.element.classList.remove("locked");
+        }
+        if (!u.unlocked) {
+          u.element.querySelector("h3").textContent = `(Bloqué) ${u.name}`;
+          u.element.querySelector("p:nth-child(2)").innerHTML = `<strong>${(u.baseCost/10).toLocaleString()} Axions</strong> requis pour débloquer.`;
+        }
         document.getElementById(`cost${i}`).textContent = u.baseCost.toLocaleString();
         document.getElementById(`mult${i}`).textContent = u.mult.toFixed(1);
       });
     }
 
-    // Génération automatique
+    // ========== GÉNÉRATION ==========
     setInterval(() => {
-      axions += aps / 10; // 10 fois par seconde
+      axions += aps / 10;
       updateDisplay();
     }, 100);
+
+    // ========== SAUVEGARDE ==========
+    function saveGame() {
+      const save = {
+        axions,
+        upgrades: upgrades.map(u => ({ baseCost: u.baseCost, mult: u.mult, unlocked: u.unlocked })),
+        rebirths,
+        rebirthMultiplier,
+        rebirthCost
+      };
+      localStorage.setItem("axionSave", JSON.stringify(save));
+    }
+
+    function loadGame() {
+      const save = JSON.parse(localStorage.getItem("axionSave"));
+      if (!save) return;
+      axions = save.axions;
+      rebirths = save.rebirths;
+      rebirthMultiplier = save.rebirthMultiplier || 1;
+      rebirthCost = save.rebirthCost || 5_000_000_000;
+
+      save.upgrades.forEach((s, i) => {
+        upgrades[i].baseCost = s.baseCost;
+        upgrades[i].mult = s.mult;
+        upgrades[i].unlocked = s.unlocked;
+      });
+      calcAps();
+      updateDisplay();
+    }
+
+    // Sauvegarde auto toutes les 5 secondes
+    setInterval(saveGame, 5000);
+    loadGame();
   </script>
 </body>
 </html>
