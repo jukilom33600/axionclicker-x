@@ -73,10 +73,26 @@
       border-radius: 6px;
     }
     #rebirth-panel button:hover { background: #f06292; }
-    .locked {
-      opacity: 0.4;
-      font-style: italic;
+    .locked { opacity: 0.4; font-style: italic; }
+    #click-upgrade {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: left;
+      margin-top: 15px;
     }
+    #click-upgrade button {
+      background: #03a9f4;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 8px;
+      width: 100%;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #click-upgrade button:hover { background: #0288d1; }
   </style>
 </head>
 
@@ -96,21 +112,33 @@
     <p>Multiplicateur global : <span id="rebirthMult">1.00</span>x</p>
     <p>Coût Rebirth : <span id="rebirthCost">5 000 000 000</span> Axions</p>
     <button id="doRebirth">Faire un Rebirth</button>
+
+    <div id="click-upgrade">
+      <h4>🖱️ Amélioration de clic</h4>
+      <p>Niveau : <span id="clickLevel">0</span> / 1000</p>
+      <p>Bonus par clic : +<span id="clickBonus">0</span> Axions</p>
+      <p>Coût : <span id="clickCost">500</span> Axions</p>
+      <button id="buyClickUpgrade">Améliorer le clic</button>
+    </div>
   </div>
 
   <div class="shop" id="shop"></div>
 
   <script>
-    // ==============================================
-    // VARIABLES DU JEU
-    // ==============================================
+    // =============================
+    // VARIABLES PRINCIPALES
+    // =============================
     let axions = 0;
     let aps = 0;
     let rebirths = 0;
     let rebirthMultiplier = 1;
-    let rebirthCost = 5_000_000_000; // 5 milliards (5B)
+    let rebirthCost = 5_000_000_000;
+    
+    // Amélioration de clic
+    let clickLevel = 0;
+    let clickBonus = 0;
+    let clickCost = 500;
 
-    // Liste des améliorations
     const upgrades = [
       { name: "Machine à Axion", baseCost: 10, baseGain: 1 },
       { name: "Axion Extracteur", baseCost: 100, baseGain: 10 },
@@ -125,9 +153,6 @@
       { name: "Singularité Axion", baseCost: 5e8, baseGain: 5e7 }
     ];
 
-    // ==============================================
-    // CRÉATION DE LA BOUTIQUE
-    // ==============================================
     const shopEl = document.getElementById("shop");
     upgrades.forEach((u, i) => {
       u.mult = 1.0;
@@ -145,33 +170,33 @@
       u.unlocked = false;
     });
 
-    // ==============================================
-    // SÉLECTEURS HTML
-    // ==============================================
     const countEl = document.getElementById("axionCount");
     const apsEl = document.getElementById("aps");
     const rebirthCountEl = document.getElementById("rebirthCount");
     const rebirthMultEl = document.getElementById("rebirthMult");
     const rebirthCostEl = document.getElementById("rebirthCost");
+    const clickLevelEl = document.getElementById("clickLevel");
+    const clickBonusEl = document.getElementById("clickBonus");
+    const clickCostEl = document.getElementById("clickCost");
 
-    // ==============================================
+    // =============================
     // CLIC PRINCIPAL
-    // ==============================================
+    // =============================
     document.getElementById("axion").onclick = () => {
-      axions += 1 * rebirthMultiplier;
+      axions += (1 + clickBonus) * rebirthMultiplier;
       updateDisplay();
     };
 
-    // ==============================================
-    // ACHATS
-    // ==============================================
+    // =============================
+    // ACHATS DES UPGRADES
+    // =============================
     upgrades.forEach((u, i) => {
       document.getElementById(`buy${i}`).onclick = () => {
         if (!u.unlocked) return;
         if (axions >= u.baseCost) {
           axions -= u.baseCost;
-          u.mult = parseFloat((u.mult + 0.1).toFixed(1)); // +10 % de multiplicateur
-          u.baseCost = Math.floor(u.baseCost * 1.1); // +10 % de coût
+          u.mult = parseFloat((u.mult + 0.1).toFixed(1));  // +10 % prod
+          u.baseCost = Math.floor(u.baseCost * 1.1);      // +10 % prix
           calcAps();
           updateDisplay();
         }
@@ -183,42 +208,52 @@
       aps *= rebirthMultiplier;
     }
 
-    // ==============================================
+    // =============================
+    // UPGRADE DE CLIC
+    // =============================
+    document.getElementById("buyClickUpgrade").onclick = () => {
+      if (axions >= clickCost && clickLevel < 1000) {
+        axions -= clickCost;
+        clickLevel++;
+        clickBonus = clickLevel * 50;
+        clickCost = Math.floor(clickCost * 2.5); // +250 % coût
+        updateDisplay();
+        saveGame();
+      }
+    };
+
+    // =============================
     // REBIRTH
-    // ==============================================
+    // =============================
     document.getElementById("doRebirth").onclick = () => {
       if (axions >= rebirthCost && rebirths < 1000) {
         rebirths++;
         axions = 0;
         upgrades.forEach(u => { u.mult = 1.0; });
-
-        // Coût +2.5B à chaque rebirth
         rebirthCost += 2_500_000_000;
-
-        // Multiplicateur x1.5 de base
         rebirthMultiplier *= 1.5;
-
-        // Bonus supplémentaire tous les 5 Rebirths
         if (rebirths % 5 === 0) rebirthMultiplier += 0.25;
-
         calcAps();
         updateDisplay();
         saveGame();
       }
     };
 
-    // ==============================================
-    // AFFICHAGE MIS À JOUR
-    // ==============================================
+    // =============================
+    // AFFICHAGE
+    // =============================
     function updateDisplay() {
       countEl.textContent = Math.floor(axions).toLocaleString();
       apsEl.textContent = aps.toFixed(1);
       rebirthCountEl.textContent = rebirths;
       rebirthMultEl.textContent = rebirthMultiplier.toFixed(2);
       rebirthCostEl.textContent = rebirthCost.toLocaleString();
+      clickLevelEl.textContent = clickLevel;
+      clickBonusEl.textContent = clickBonus.toLocaleString();
+      clickCostEl.textContent = clickCost.toLocaleString();
 
       upgrades.forEach((u, i) => {
-        const costOK = i === 0 || axions >= u.baseCost; // première visible
+        const costOK = i === 0 || axions >= u.baseCost;
         if (costOK) {
           u.unlocked = true;
           u.element.classList.remove("locked");
@@ -237,17 +272,17 @@
       });
     }
 
-    // ==============================================
+    // =============================
     // GÉNÉRATION AUTOMATIQUE
-    // ==============================================
+    // =============================
     setInterval(() => {
       axions += aps / 10;
       updateDisplay();
     }, 100);
 
-    // ==============================================
-    // SAUVEGARDE
-    // ==============================================
+    // =============================
+    // SAUVEGARDE / CHARGEMENT
+    // =============================
     function saveGame() {
       const save = {
         axions,
@@ -256,9 +291,8 @@
           mult: u.mult,
           unlocked: u.unlocked
         })),
-        rebirths,
-        rebirthMultiplier,
-        rebirthCost
+        rebirths, rebirthMultiplier, rebirthCost,
+        clickLevel, clickBonus, clickCost
       };
       localStorage.setItem("axionSave", JSON.stringify(save));
     }
@@ -270,6 +304,9 @@
       rebirths = save.rebirths;
       rebirthMultiplier = save.rebirthMultiplier || 1;
       rebirthCost = save.rebirthCost || 5_000_000_000;
+      clickLevel = save.clickLevel || 0;
+      clickBonus = save.clickBonus || 0;
+      clickCost = save.clickCost || 500;
       save.upgrades.forEach((s, i) => {
         upgrades[i].baseCost = s.baseCost;
         upgrades[i].mult = s.mult;
@@ -284,4 +321,3 @@
   </script>
 </body>
 </html>
-
